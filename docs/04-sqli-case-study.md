@@ -6,42 +6,35 @@ Simulate SQL Injection attack against DVWA and validate Suricata detection.
 
 ---
 
-## Attack Execution
+## DVWA SQLi Execution
 
-Access DVWA:
-http://192.168.200.10
+![DVWA SQLi](../assets/screenshots/4%20SQL%20Injection%20Case%20Study/01_dvwa_sqli_success.png)
 
-Payload example:
-' OR 1=1 --
+SQL injection payload successfully executed.
 
 ---
 
-## Custom Rule
+## tcpdump Payload Capture
 
-Example rule:
+![SQLi Packet](../assets/screenshots/4%20SQL%20Injection%20Case%20Study/02_tcpdump_sqli_payload.png)
 
-```
-alert http any any -> any any (msg:"SQL Injection Attempt"; content:"' OR 1=1"; sid:1000002; rev:1;)
-```
+Payload visible at packet inspection level.
 
 ---
 
-## Log Validation
+## Suricata Alert (fast.log)
 
-```bash
-sudo tail -n 5 /var/log/suricata/fast.log
-sudo tail -n 5 /var/log/suricata/eve.json
-```
+![fast.log SQLi](../assets/screenshots/4%20SQL%20Injection%20Case%20Study/03_fast_log_sqli_alert.png)
+
+Detection triggered by custom rule.
 
 ---
 
-## Evidence
+## Application Response
 
-![SQLi Payload](../assets/screenshots/sqli/01-payload.png)
+![App Response](../assets/screenshots/4%20SQL%20Injection%20Case%20Study/04_application_response.png)
 
-![fast.log SQLi](../assets/screenshots/sqli/02-fastlog-sqli.png)
-
-![eve.json SQLi](../assets/screenshots/sqli/03-evejson-sqli.png)
+Server response confirms successful injection attempt.
 
 ---
 
@@ -53,6 +46,6 @@ T1190 – Exploit Public-Facing Application
 
 ## Findings
 
-- Payload successfully triggered detection
-- HTTP inspection functioning
-- Structured alert logged in eve.json
+- HTTP payload inspection operational
+- SQLi rule successfully triggered
+- Alert logged in fast.log
