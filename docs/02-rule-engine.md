@@ -2,53 +2,38 @@
 
 ## Objective
 
-Configure Suricata to load custom detection rules and validate rule parsing.
+Load and validate custom detection rules in Suricata.
 
 ---
 
-## Custom Rules Location
+## Local Rules Configuration
+
+![Local Rules](../assets/screenshots/2%20Rule%20Engine/01_local_rules_configuration.png)
+
+Custom rules defined in:
 
 /etc/suricata/rules/local.rules
 
 ---
 
-## Sample Custom Rule (ICMP Test)
+## Rules Loaded Successfully
 
-```
-alert icmp any any -> any any (msg:"ICMP Test Detected"; sid:1000001; rev:1;)
-```
+![Rules Loaded](../assets/screenshots/2%20Rule%20Engine/02_rules_loaded_successfully.png)
 
----
-
-## Validate Configuration
-
-```bash
-sudo suricata -T -c /etc/suricata/suricata.yaml
-```
-
-Expected:
-Configuration provided was successfully loaded.
+Suricata confirmed successful rule loading.
 
 ---
 
-## Run Suricata
+## Alert Proof (fast.log)
 
-```bash
-sudo suricata -D -c /etc/suricata/suricata.yaml -i enp0s3
-```
+![fast.log Alert](../assets/screenshots/2%20Rule%20Engine/03_fast_log_alert_proof.png)
 
----
-
-## Evidence
-
-![Rule Test](../assets/screenshots/rule-engine/01-suricata-test.png)
-
-![Custom Rule](../assets/screenshots/rule-engine/02-local-rules.png)
+Alert successfully triggered and logged.
 
 ---
 
 ## Findings
 
-- Custom rules loaded successfully
-- Suricata validated configuration without errors
-- Detection engine operational
+- Custom rules parsed correctly
+- Detection engine functioning
+- Alerts written to fast.log
