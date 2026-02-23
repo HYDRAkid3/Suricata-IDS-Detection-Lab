@@ -1,24 +1,38 @@
 # Suricata IDS Detection Lab - Custom Rules
 
 Author: Harshit Krishna  
-Purpose: Lab detection validation rules for Suricata IDS
+Purpose: Custom detection rules for lab validation
 
 ---
 
 ## Overview
 
-This file contains custom Suricata rules created to support controlled attack simulations within the lab environment.
+This document contains the custom Suricata rules created to validate detection scenarios within the controlled lab environment.
 
-These rules supplement the ET Open baseline rule set and are designed for:
+These rules supplement the ET Open baseline rule set and are scoped specifically to:
 
-- ICMP path validation
+- ICMP traffic validation
 - SYN scan detection
-- SQL Injection detection
-- Cross-Site Scripting (XSS) detection
+- SQL Injection attempts
+- Cross-Site Scripting attempts
 
 ---
 
-## Custom Rules
+## ET Baseline Verification
+
+![ET Rule Count](../assets/screenshots/2%20Rule%20Engine/04_et_rule_count.png)
+
+The IDS is operating with approximately 48,000+ ET Open alert rules, providing real-world detection coverage.
+
+---
+
+## Custom Rule File Content
+
+![Local Rules Screenshot](../assets/screenshots/2%20Rule%20Engine/05_local_rules_content.png)
+
+---
+
+## Custom Rules (Reference Copy)
 
 ```rules
 # ICMP Path Validation
@@ -88,8 +102,21 @@ alert http any any -> 192.168.200.10 80 (
 
 ---
 
-## Notes
+## Design Notes
 
-These rules are intentionally scoped to the lab network and target DVWA running on 192.168.200.10.
+- Custom SIDs start at 1000000+ to avoid conflicts with ET rules.
+- Rules are scoped to the lab subnet (192.168.200.0/24).
+- Thresholding is used for scan detection to reduce noise.
+- Rules are intentionally simple for deterministic validation.
 
-They are designed for controlled detection validation and do not replace enterprise-grade signature sets.
+---
+
+## Summary
+
+The lab rule engine combines:
+
+- ET Open baseline detection (community signatures)
+- Controlled custom rule validation
+- Structured detection workflow
+
+This approach reflects practical SOC detection architecture.
