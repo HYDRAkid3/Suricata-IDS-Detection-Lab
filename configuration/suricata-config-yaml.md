@@ -63,6 +63,7 @@ If Suricata starts but does not show capture initialization or thread creation, 
 Although Suricata runs in IDS mode (detect-only), the VM is also acting as a router between SOC-IN and SOC-OUT. This requires IPv4 forwarding enabled at the OS level.
 
 Proof of forwarding enabled:
+
 ![IP Forwarding Enabled](../evidence/screenshots/01_Infrastructure_Setup/04_ip_forwarding_enabled.png)
 
 Why it matters:
