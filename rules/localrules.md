@@ -1,122 +1,178 @@
-# Suricata IDS Detection Lab - Custom Rules
+# local.rules – Custom Signatures Used in This Lab
 
-Author: Harshit Krishna  
-Purpose: Custom detection rules for lab validation
+This file contains the custom Suricata signatures used to validate detection capability in a controlled, segmented environment.
 
----
+Lab Context:
+Attacker (Kali): 192.168.100.10  
+Suricata Gateway/IDS: 192.168.100.1 / 192.168.200.1  
+Target (DVWA): 192.168.200.10  
 
-## Overview
+All traffic from SOC-IN to SOC-OUT is routed through Suricata, ensuring the IDS observes both reconnaissance and web exploitation activity.
 
-This document contains the custom Suricata rules created to validate detection scenarios within the controlled lab environment.
+Rule Source:
+These rules are loaded via suricata.yaml into Suricata at startup.
 
-These rules supplement the ET Open baseline rule set and are scoped specifically to:
+Proof that local rules are enabled in configuration:
 
-- ICMP traffic validation
-- SYN scan detection
-- SQL Injection attempts
-- Cross-Site Scripting attempts
+![Local Rules Loaded in Config](../evidence/screenshots/02_Rule_Engine_Validation/01_local_rules_loaded_in_config.png)
 
----
+Proof that rules load successfully:
 
-## ET Baseline Verification
+![Rules Loaded Successfully](../evidence/screenshots/02_Rule_Engine_Validation/02_suricata_rules_loaded_successfully.png)
 
-![ET Rule Count](../assets/screenshots/2%20Rule%20Engine/04_et_rule_count.png)
+Proof of local rule contents as loaded on the Suricata VM:
 
-The IDS is operating with approximately 48,000+ ET Open alert rules, providing real-world detection coverage.
-
----
-
-## Custom Rule File Content
-
-![Local Rules Screenshot](../assets/screenshots/2%20Rule%20Engine/05_local_rules_content.png)
+![Custom Local Rules Content](../evidence/screenshots/02_Rule_Engine_Validation/05_custom_local_rules_content.png)
 
 ---
 
-## Custom Rules (Reference Copy)
+## 1) ICMP Validation Rule (Connectivity + Visibility)
 
-```rules
-# ICMP Path Validation
-alert icmp any any -> any any (
-    msg:"LAB ICMP Traffic Observed (Path Validation)";
-    itype:8;
-    classtype:network-event;
-    sid:1000001;
-    rev:1;
-)
+Goal:
+Confirm Suricata can see cross-subnet traffic and generate an alert for a simple L3 event.
 
-# SYN Scan Detection
-alert tcp any any -> 192.168.200.0/24 any (
-    msg:"LAB Possible SYN Scan Detected";
-    flags:S;
-    flow:stateless;
-    detection_filter:track by_src, count 20, seconds 10;
-    classtype:attempted-recon;
-    sid:1000010;
-    rev:1;
-)
+Detection:
+Any ICMP traffic (commonly triggered during ping-based path validation).
 
-# SQL Injection - OR 1=1
-alert http any any -> 192.168.200.10 80 (
-    msg:"LAB SQL Injection Attempt - OR 1=1 Pattern";
-    flow:to_server,established;
-    http.uri;
-    content:"or 1=1"; nocase;
-    classtype:web-application-attack;
-    sid:1000020;
-    rev:1;
-)
+Rule:
 
-# SQL Injection - UNION
-alert http any any -> 192.168.200.10 80 (
-    msg:"LAB SQL Injection Attempt - UNION SELECT";
-    flow:to_server,established;
-    http.uri;
-    content:"union"; nocase;
-    classtype:web-application-attack;
-    sid:1000021;
-    rev:1;
-)
-
-# XSS Detection - Script Tag
-alert http any any -> 192.168.200.10 80 (
-    msg:"LAB XSS Attempt - Script Tag Detected";
-    flow:to_server,established;
-    http.uri;
-    content:"<script"; nocase;
-    classtype:web-application-attack;
-    sid:1000030;
-    rev:1;
-)
-
-# XSS Detection - Encoded Script
-alert http any any -> 192.168.200.10 80 (
-    msg:"LAB Encoded XSS Attempt Detected";
-    flow:to_server,established;
-    http.uri;
-    content:"%3Cscript%3E"; nocase;
-    classtype:web-application-attack;
-    sid:1000031;
-    rev:1;
-)
+```suricata
+alert icmp any any -> any any (msg:"LAB TEST ALERT"; sid:1000001; rev:1;)
 ```
 
+Why it works:
+- ICMP is easy to generate and deterministic
+- Confirms inline placement and packet visibility before moving to complex attack payloads
+
+Validation evidence:
+
+![Fastlog Alert Triggered Proof](../evidence/screenshots/02_Rule_Engine_Validation/03_fastlog_alert_triggered_proof.png)
+
 ---
 
-## Design Notes
+## 2) SYN Scan Detection Rule (Recon – TCP Flags)
 
-- Custom SIDs start at 1000000+ to avoid conflicts with ET rules.
-- Rules are scoped to the lab subnet (192.168.200.0/24).
-- Thresholding is used for scan detection to reduce noise.
-- Rules are intentionally simple for deterministic validation.
+Goal:
+Detect stealth port discovery activity typical of reconnaissance behavior.
+
+Detection:
+TCP SYN packets (flags:S), commonly produced by Nmap SYN scan (-sS).
+
+Rule:
+
+```suricata
+alert tcp any any -> 192.168.200.10 any (flags:S; msg:"SYN SCAN DETECTED"; sid:1000003; rev:1;)
+```
+
+What it detects:
+- Incomplete handshake behavior
+- “Knocking” patterns against services
+- Early-stage attacker recon
+
+Validation evidence (scan alerts visible):
+
+![Nmap Detection Alerts Fastlog](../evidence/screenshots/02_Rule_Engine_Validation/07_nmap_detection_alerts_fastlog.png)
 
 ---
 
-## Summary
+## 3) SQL Injection Rule (Web Exploitation – Payload Keyword Match)
 
-The lab rule engine combines:
+Goal:
+Detect SQL injection attempts against DVWA by matching common SQLi keywords.
 
-- ET Open baseline detection (community signatures)
-- Controlled custom rule validation
-- Structured detection workflow
+Detection:
+The keyword "UNION" (case-insensitive) commonly appears in UNION-based SQL injection.
 
-This approach reflects practical SOC detection architecture.
+Rule:
+
+```suricata
+alert tcp any any -> 192.168.200.10 80 (msg:"RAW SQLI UNION DETECTED"; content:"UNION"; nocase; sid:1002001; rev:1;)
+```
+
+Why this rule exists:
+- It is deterministic for lab validation
+- It demonstrates content-based detection
+- It proves Suricata can inspect payloads on HTTP traffic crossing the gateway
+
+Notes:
+- This is a simple signature (keyword match). In production, you would add:
+  - http_uri/http_client_body keywords
+  - flow:to_server,established
+  - content anchoring, PCRE, and normalization checks
+- For a lab portfolio, it cleanly proves payload inspection and alerting logic.
+
+Runtime detection proof (alerts generated during exploit activity):
+
+![Suricata Alert Generated Runtime](../evidence/screenshots/02_Rule_Engine_Validation/06_suricata_alert_generated_runtime.png)
+
+---
+
+## 4) XSS Detection Rule (Web Exploitation – Script Injection)
+
+Goal:
+Detect basic script injection attempts using common XSS markers.
+
+Detection:
+The tag "<script>" (case-insensitive).
+
+Rule:
+
+```suricata
+alert tcp any any -> 192.168.200.10 80 (msg:"XSS ATTEMPT DETECTED"; content:"<script>"; nocase; sid:1003001; rev:1;)
+```
+
+Why it works:
+- Script tags are a common and direct XSS indicator
+- DVWA low-security mode makes this highly reproducible
+- Confirms Suricata can detect client-supplied payload content
+
+Operational notes:
+- This rule matches the raw string. Real-world improvements often include:
+  - URL decoding normalization
+  - detecting encoded payloads (%3Cscript%3E)
+  - restricting scope to HTTP URI/body fields for fewer false positives
+
+---
+
+## 5) SID Strategy (Avoiding Conflicts)
+
+SIDs were selected to avoid collision with ET Open:
+
+- 1000001 → ICMP visibility test
+- 1000003 → SYN scan detection
+- 1002001 → SQLi keyword detection
+- 1003001 → XSS keyword detection
+
+This makes alert triage easier and prevents rule ID overlap with community feeds.
+
+---
+
+## 6) Where Alerts Appear
+
+fast.log (human-readable alerts):
+/var/log/suricata/fast.log
+
+eve.json (structured SOC/SIEM-ready output):
+/var/log/suricata/eve.json
+
+fast.log proof:
+
+![Fastlog Alert Triggered Proof](../evidence/screenshots/02_Rule_Engine_Validation/03_fastlog_alert_triggered_proof.png)
+
+ET Open rule base presence proof (baseline ruleset active alongside custom rules):
+
+![ET Open Rule Base Statistics](../evidence/screenshots/02_Rule_Engine_Validation/04_rule_base_statistics_et_open.png)
+
+---
+
+## 7) Summary
+
+These custom rules prove the following capabilities:
+
+- L3 visibility and alerting (ICMP)
+- L4 reconnaissance detection (TCP SYN scan)
+- L7 payload inspection (SQLi + XSS keyword signatures)
+- Successful integration alongside ET Open baseline rules
+- Verified logging to fast.log and runtime alert generation
+
+This completes the custom detection engineering layer of the Suricata IDS Detection Lab.
