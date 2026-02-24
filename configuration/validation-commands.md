@@ -120,6 +120,7 @@ Check rule load status:
 ![Rules Loaded Successfully](../evidence/screenshots/02_Rule_Engine_Validation/02_suricata_rules_loaded_successfully.png)
 
 Check baseline rule statistics:
+
 ![ET Open Rule Statistics](../evidence/screenshots/02_Rule_Engine_Validation/04_rule_base_statistics_et_open.png)
 
 Expected:
