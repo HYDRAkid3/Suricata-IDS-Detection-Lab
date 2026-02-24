@@ -56,6 +56,7 @@ If disabled:
 sudo sysctl -w net.ipv4.ip_forward=1
 
 Proof of enabled forwarding:
+
 ![IP Forwarding Enabled](../evidence/screenshots/01_Infrastructure_Setup/04_ip_forwarding_enabled.png)
 
 Without forwarding:
