@@ -194,5 +194,5 @@ This mapping demonstrates detection alignment with standardized threat framework
 ## Author
 
 Harshit Krishna  
-MS Cybersecurity – University of Delaware  
+MS Cybersecurity - University of Delaware  
 Blue Team / SOC / Detection Engineering Focus
